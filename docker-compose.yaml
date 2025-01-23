@@ -29,3 +29,4 @@ services:
       - /frontend-app/node_modules
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8001
+      -
