@@ -5,6 +5,9 @@ import {persistStore, persistReducer} from 'redux-persist'
 
 import {auth} from '@/redux/features/auth-slice'
 import {theme} from '@/redux/features/theme-slice'
+import {api} from '@/redux/features/api-slice'
+import search from '@/redux/features/search-slice'
+import searchRequest from '@/redux/features/searchRequest_slice'
 
 
 const persistConfig = {
@@ -24,6 +27,9 @@ const themePersistConfig = {
 }
 
 const rootReducer = combineReducers({
+    api: api.reducer,
+    search: search,
+    searchRequest: searchRequest,
     user: persistReducer(userPersistConfig, auth.reducer),
     theme: persistReducer(themePersistConfig, theme.reducer)
 });

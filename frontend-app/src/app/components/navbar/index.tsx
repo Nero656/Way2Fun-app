@@ -1,5 +1,5 @@
 'use client'
-import {Navbar as RSNavbar, Stack, Nav, InputGroup, Input, Button, DatePicker, Modal, Dropdown, Toggle} from 'rsuite'
+import {Navbar as RSNavbar, Nav, Button, Modal, Dropdown, Toggle} from 'rsuite'
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined'
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined'
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined'
@@ -11,10 +11,9 @@ import {useRouter} from 'next/navigation'
 import {store} from "@/redux/store";
 import {themeAction} from "@/redux/features/theme-slice"
 import {logOut} from "@/redux/features/auth-slice";
+import Search from '../search'
 
-export default function Navbar({toggleMode, theme}: any) {
-    const [city, setCity] = useState('');
-    const [date, setDate] = useState<Date | null>(null)
+export default function Navbar({theme}: any) {
     const [showSearch, setShowSearch] = useState(false)
     const [isClient, setIsClient] = useState(false)
     const [isMobile, setIsMobile] = useState(false)
@@ -25,15 +24,14 @@ export default function Navbar({toggleMode, theme}: any) {
     const toggleModeFunc = () => {
         store.dispatch(themeAction({theme: store.getState().theme?.value.theme}))
         theme()
-    };
-
-    const handleSearch = () => {
-        console.log('Searching for city:', city, 'on date:', date);
-    };
+    }
+    const handleResize = () => {
+        setIsMobile(window.innerWidth <= 768)
+    }
 
     useEffect(() => {
-        setIsClient(true);
-        setIsMobile(window.innerWidth <= 768);
+        setIsClient(true)
+        setIsMobile(window.innerWidth <= 768)
 
         const savedToken = store.getState().user?.value.accessToken
         const savedUsername = store.getState().user?.value.user.name
@@ -41,7 +39,9 @@ export default function Navbar({toggleMode, theme}: any) {
         setToken(savedToken ? String(savedToken) : null)
         setUsername(savedUsername ? String(savedUsername) : null)
 
-    }, []);
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [])
 
     if (!isClient) {
         return null;
@@ -50,38 +50,19 @@ export default function Navbar({toggleMode, theme}: any) {
     const handleLogout = () => {
         store.dispatch(logOut())
         location.reload()
-    };
+    }
 
     return (
-        <>
-            <RSNavbar>
+        <div>
+            <RSNavbar style={{position: 'fixed', zIndex: 99, minWidth: '100vw', top: 0}}>
                 <RSNavbar.Brand style={{cursor: 'pointer'}} onClick={() => router.push('/')}>
                     Way2Fun
                 </RSNavbar.Brand>
                 <Nav pullRight>
                     {!isMobile && (
-                        <Nav.Item>
-                            <InputGroup inside style={{width: '100%'}}>
-                                <Input
-                                    placeholder="Какой город?"
-                                    value={city}
-                                    onChange={(value) => setCity(value)}
-                                    style={{flex: 1}} // Растягиваем поле ввода города
-                                />
-                                <DatePicker
-                                    value={date}
-                                    onChange={(newDate) => setDate(newDate)}
-                                    placeholder="Когда?"
-                                    style={{marginLeft: '10px', flex: 2}}
-                                />
-                                <Button
-                                    onClick={handleSearch}
-                                    appearance="primary"
-                                    className={isMobile ? 'hidden-xs' : ''}
-                                    style={{marginLeft: '10px'}}
-                                ><SearchOutlinedIcon/></Button>
-                            </InputGroup>
-                        </Nav.Item>
+                        <div style={{float: 'left', marginTop: '0.5rem'}}>
+                            <Search/>
+                        </div>
                     )}
 
                     {isMobile && (
@@ -112,8 +93,10 @@ export default function Navbar({toggleMode, theme}: any) {
                         <Dropdown title={username} icon={<PersonOutlineOutlinedIcon/>} placement="bottomStart">
                             <Dropdown.Item
                                 icon={<AccountCircleIcon fontSize={'small'}/>}
+                                onClick={() => {router.push(`/user/profile`)}}
                             >
-                                Профиль
+                                {/*<Link href={`/user/profile`}>*/}
+                                    Профиль
                             </Dropdown.Item>
                             <Dropdown.Item>
                                 <Toggle
@@ -132,8 +115,6 @@ export default function Navbar({toggleMode, theme}: any) {
                             </Dropdown.Item>
                         </Dropdown>
                     }
-
-
                 </Nav>
             </RSNavbar>
 
@@ -143,30 +124,14 @@ export default function Navbar({toggleMode, theme}: any) {
                     <Modal.Title>Search</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <InputGroup inside style={{width: '100%'}}>
-                        <Input
-                            placeholder="Какой город?"
-                            value={city}
-                            onChange={(value) => setCity(value)}
-                            style={{flex: 1}}
-                        />
-                        <DatePicker
-                            value={date}
-                            onChange={(newDate) => setDate(newDate)}
-                            placeholder="Select date"
-                            style={{marginLeft: '10px', flex: 2}}
-                        />
-                    </InputGroup>
+                    <Search />
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button onClick={handleSearch} appearance="primary">
-                        Искать
-                    </Button>
                     <Button onClick={() => setShowSearch(false)} appearance="subtle">
                         Отменить
                     </Button>
                 </Modal.Footer>
             </Modal>
-        </>
+        </div>
     );
 }

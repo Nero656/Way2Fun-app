@@ -4,6 +4,7 @@ import React, {useEffect, useState} from "react";
 import {Controller, useForm} from "react-hook-form";
 import {store} from "@/redux/store";
 import { logIn } from '@/redux/features/auth-slice'
+import {useRouter} from "next/navigation";
 
 type responseType = {
     access_token?: string,
@@ -14,6 +15,7 @@ export default function Auth() {
     const [isMobile, setIsMobile] = useState(false)
     const {control, handleSubmit} = useForm({defaultValues: {email: '', password: ''}})
     const toaster = useToaster()
+    const router = useRouter()
 
     useEffect(() => {
         setIsMobile(window.innerWidth <= 768);
@@ -34,7 +36,7 @@ export default function Auth() {
 
     const requestLogin = async (data: any) => {
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/users/auth/login`, {
+            const res = await fetch(`${store.getState().api?.value.url}users/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -67,7 +69,7 @@ export default function Auth() {
     const requestGetCurrentUser = async (auth_token: string) => {
         console.log(auth_token)
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/users/auth/current_user`, {
+            const res = await fetch(`${store.getState().api?.value.url}users/auth/current_user`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -84,6 +86,8 @@ export default function Auth() {
                 }
                 if (res.status === 200) {
                     store.dispatch(logIn({accessToken: auth_token, user: data}))
+                    // router.refresh()
+                    // router.push(`/`)
                     location.replace('/')
                 }
             } else {
@@ -124,7 +128,7 @@ export default function Auth() {
     })
 
     return (
-        <div>
+        <>
             <div style={isMobile ? {
                 padding: 10
             } : {
@@ -160,11 +164,11 @@ export default function Auth() {
                             <Button appearance="primary" block type={'submit'}>
                                 Войти
                             </Button>
-                            <a href="#">Забыли пароль?</a>
+                            {/*<a href="#">Забыли пароль?</a>*/}
                         </VStack>
                     </Form>
                 </Panel>
             </div>
-        </div>
+        </>
     )
 }

@@ -7,6 +7,7 @@ type InitialState = {
 type AuthState = {
     accessToken: string,
     user: {
+        id: number,
         name: string,
         email: string,
         telephone: string,
@@ -17,6 +18,7 @@ const initialState = {
     value : {
         accessToken: '',
         user: {
+            id: 0,
             name: '',
             email: '',
             telephone: '',
@@ -35,6 +37,7 @@ export const auth = createSlice({
         logIn: (state, action: PayloadAction<{
             accessToken: string,
             user: {
+                id: number
                 name: string,
                 email: string,
                 telephone: string,
@@ -44,6 +47,7 @@ export const auth = createSlice({
                 value: {
                     accessToken: action.payload.accessToken,
                     user: {
+                        id: action.payload.user.id,
                         name: action.payload.user.name,
                         email: action.payload.user.email,
                         telephone: action.payload.user.telephone

@@ -3,6 +3,7 @@ import {useForm, Controller} from 'react-hook-form'
 import {Form, Panel, ButtonToolbar, Button, VStack, Schema, Notification, useToaster,} from 'rsuite'
 import React, {useEffect, useState} from "react"
 import Link from "next/link"
+import {store} from "@/redux/store";
 
 export default function Registration() {
     const [isMobile, setIsMobile] = useState(false)
@@ -14,9 +15,9 @@ export default function Registration() {
         email: '',
         password: '',
         repeatPassword: ''
-    };
+    }
 
-    const {control, handleSubmit} = useForm({defaultValues});
+    const {control, handleSubmit} = useForm({defaultValues})
 
     const {StringType, NumberType} = Schema.Types;
     const model = Schema.Model({
@@ -30,7 +31,7 @@ export default function Registration() {
 
     const requestRegistration = async (data: any) => {
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/users/auth/register`, {
+            const res = await fetch(`${store.getState().api?.value.url}users/auth/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

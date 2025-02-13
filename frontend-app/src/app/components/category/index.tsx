@@ -1,8 +1,11 @@
 'use client'
-import {Nav, Image, IconButton, Drawer, Placeholder} from 'rsuite'
-import {useState, useEffect} from 'react'
-import CategoryActivity from './activity/page'
+import {Nav, Image, IconButton, Drawer, Placeholder, Loader, Text} from 'rsuite'
+import React, {useState, useEffect} from 'react'
+import CategoryActivity from './activity'
 import MenuIcon from '@rsuite/icons/Menu'
+import {store} from "@/redux/store"
+import Link from "next/link";
+import {css} from '@emotion/css'
 
 type ImageType = {
     id: number
@@ -17,15 +20,14 @@ type categoryType = {
 }
 
 type activityList = {
-    id?: number,
-    name?: string,
-    description?: string,
-    short_description?: string,
-    price?: string,
-    duration?: number,
-    capacity?: number,
-
-    city?: {
+    id: number,
+    name: string,
+    description: string,
+    short_description: string,
+    price: string,
+    duration: number,
+    capacity: number,
+    city: {
         name: string,
         country: string,
         climate: string,
@@ -39,19 +41,34 @@ type activityList = {
     }
 }
 
+const image = css`
+    width: 100vw;
+    height: 45vh;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+`
+
+const activity_footer = css`
+    display: flex;
+    width: 100%;
+    overflow: auto;
+    justify-content: center;
+    align-items: 'center'
+`
 
 export default function category() {
+    const [categoryId, setCategoryId] = useState<number>(0)
     const [categoryResponse, setCategoryResponse] = useState<categoryType[]>([])
     const [activityResponse, setActivityResponse] = useState<activityList[]>([])
     const [imageResponse, setImageResponse] = useState<ImageType | null>(null)
-    const [isMobile, setIsMobile] = useState(false)
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 1100)
     const [active, setActive] = useState(1)
     const [drawerOpen, setDrawerOpen] = useState(false)
     const toggleDrawer = () => setDrawerOpen(!drawerOpen)
 
     const requestCategory = async () => {
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/categories/`, {
+            const res = await fetch(`${store.getState().api?.value.url}categories/`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -67,6 +84,8 @@ export default function category() {
             if (contentType && contentType.includes("application/json")) {
                 const data = await res.json()
                 setCategoryResponse(data)
+                await requestImage(data[0].images[0].id)
+
             } else {
                 throw new Error("Received non-JSON response")
             }
@@ -78,7 +97,7 @@ export default function category() {
 
     const requestImage = async (id: number) => {
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/image/${id}`, {
+            const res = await fetch(`${store.getState().api?.value.url}image/${id}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -87,15 +106,12 @@ export default function category() {
 
             if (!res.ok) {
                 if (res.status === 404) {
-                    console.warn(`Image with ID ${id} not found.`)
-                    setImageResponse(null) // Set a fallback or null response
+                    setImageResponse(null)
                     return
                 }
                 throw new Error(`HTTP error! Status: ${res.status}`)
             }
-
             const contentType = res.headers.get("content-type")
-
             if (contentType && contentType.includes("application/json")) {
                 const data = await res.json()
                 setImageResponse(data)
@@ -110,7 +126,7 @@ export default function category() {
 
     const requestActivity = async (id: number) => {
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/activities/${id}`, {
+            const res = await fetch(`${store.getState().api?.value.url}activities/${id}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -124,7 +140,7 @@ export default function category() {
 
             if (contentType && contentType.includes("application/json")) {
                 const data = await res.json()
-                setActivityResponse(data)
+                setActivityResponse(data.data)
             } else {
                 throw new Error("Received non-JSON response")
             }
@@ -134,8 +150,10 @@ export default function category() {
         }
     }
 
+    const handleResize = () => {
+        setIsMobile(window.innerWidth <= 1100)
+    }
     useEffect(() => {
-        setIsMobile(window.innerWidth <= 768);
         async function fetchData() {
             try {
                 await Promise.all([
@@ -146,12 +164,12 @@ export default function category() {
                 console.error("Error fetching data:", error)
             }
         }
-
         fetchData()
+        window.addEventListener("resize", handleResize)
+        return () => window.removeEventListener("resize", handleResize)
     }, [])
 
-
-    const Navbar = ({active, onSelect, ...props}: any) => {
+    const Navbar = ({active, onSelect}: any) => {
         return (
             <>
                 <Nav
@@ -160,21 +178,22 @@ export default function category() {
                     appearance="subtle"
                     reversed={true}
                     style={
-                    isMobile ? {
-                        display: 'flex',
-                    } : {
-                        marginTop: -5,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center'
-                    }}
+                        isMobile ? {
+                            display: 'flex',
+                        } : {
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center'
+                        }}
                 >
-
                     <div className="nav-items-desktop">
                         {categoryResponse.map((category, index) => (
                             <Nav.Item eventKey={category.id} key={index} onClick={() => {
                                 requestActivity(category.id)
-                                category.images.length > 0 ? requestImage(category.images[0].id) : 0
+                                setCategoryId(category.id)
+                                category.images.length > 0 ?
+                                    requestImage(category.images[0].id) :
+                                    setImageResponse(null)
                             }}>
                                 {category.name}
                             </Nav.Item>
@@ -202,10 +221,11 @@ export default function category() {
                             <>
                                 {categoryResponse.map((category, index) => (
                                     <Nav.Item eventKey={category.id} key={index} onClick={() => {
+                                        setCategoryId(category.id)
                                         requestActivity(category.id)
                                         category.images.length > 0 ?
                                             requestImage(category.images[0].id)
-                                            : 0
+                                            :  requestImage(0)
                                         toggleDrawer() // Close drawer on selection
                                     }}>
                                         {category.name}
@@ -221,32 +241,38 @@ export default function category() {
 
     return (
         <>
-            <div style={{width: '100vw', overflow: 'hidden'}}>
-                {imageResponse?.img_url != null || imageResponse?.img_url != undefined &&
+            {imageResponse?.img_url != null &&
                 <Image
-                    src={`http://127.0.0.1:8000/${imageResponse?.img_url}`}
-                    alt={`name`}
+                    src={`${store.getState().api?.value.image_url}${imageResponse?.img_url}`}
+                    alt={'category_image'}
+                    className={image}
+                />
+            }
+
+            {imageResponse?.img_url === null || imageResponse?.img_url === undefined &&
+                <Placeholder.Graph
                     style={{
+                        marginBottom: -5,
                         width: '100vw',
                         height: '45vh',
                         objectFit: 'cover',
                         objectPosition: 'center'
                     }}
                 />
-                }
-                {imageResponse?.img_url === null || imageResponse?.img_url === undefined &&
-                    <Placeholder.Graph
-                        style={{
-                            width: '100vw',
-                            height: '45vh',
-                            objectFit: 'cover',
-                            objectPosition: 'center'
-                        }}
-                    />
+            }
+
+            <Navbar active={active} onSelect={setActive}/>
+            <> {activityResponse ?
+                <CategoryActivity activity={activityResponse}/>
+                : <Loader content="Загрузка..."/>
+            }
+            </>
+            <div className={activity_footer}>
+                {activityResponse.length < 5?
+                    <Text>К сожалению больше активностей не обнаружено...</Text> :
+                    <Link href={`/activities/${categoryId}`}>Посмотреть ещё... </Link>
                 }
             </div>
-            <Navbar active={active} onSelect={setActive}/>
-            <CategoryActivity activityList={activityResponse}/>
         </>
     )
 }

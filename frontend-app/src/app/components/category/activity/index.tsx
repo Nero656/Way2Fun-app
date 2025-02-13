@@ -1,18 +1,17 @@
 'use client'
 import {CardGroup, Card, VStack, TagGroup, Placeholder, Tag, Image} from 'rsuite'
-import {useEffect, useState} from "react";
-import { useRouter } from 'next/navigation'
+import React, {useEffect, useState} from "react"
+import {useRouter} from 'next/navigation'
 
-type Activity = {
-    id?: number,
-    name?: string,
-    description?: string,
-    short_description?: string,
-    price?: string,
-    duration?: number,
-    capacity?: number,
-
-    city?: {
+type activityType = {
+    id: number,
+    name: string,
+    description: string,
+    short_description: string,
+    price: string,
+    duration: number,
+    capacity: number,
+    city: {
         name: string,
         country: string,
         climate: string,
@@ -26,28 +25,33 @@ type Activity = {
     }
 }
 
-type ActivityState = {
-    activityList: Activity[]
+interface activityInterface {
+    activity: activityType[]
 }
 
-
-export default function activities({activityList}: ActivityState){
+export default function Activities({activity}: activityInterface) {
     const [isMobile, setIsMobile] = useState(false)
     const router = useRouter()
 
+    const handleResize = () => {
+        setIsMobile(window.innerWidth <= 900)
+    }
+
     useEffect(() => {
-        setIsMobile(window.innerWidth <= 768);
+        setIsMobile(window.innerWidth <= 900)
+        window.addEventListener("resize", handleResize)
+        return () => window.removeEventListener("resize", handleResize)
     }, [])
 
     return (
         <VStack spacing={20} style={{marginTop: 10, display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
             <CardGroup columns={isMobile ? 1 : 2} spacing={10} style={{padding: 10}}>
-                {activityList?.map((item: Activity, index: number) => (
+                {activity.slice(0, 4).map((item: activityType, index: number) => (
                     <Card
                         shaded={'hover'}
                         direction={isMobile ? 'column' : "row"}
                         key={index}
-                        onClick={() => router.push(`/activities/${item?.id}`)}
+                        onClick={() => router.push(`/activities/activity/${item?.id}`)}
                     >
                         {item.images?.img_url === null || item.images?.img_url === undefined &&
                             <Placeholder.Graph style={isMobile ? {} : {width: 200}}/>
@@ -58,7 +62,7 @@ export default function activities({activityList}: ActivityState){
                                 src="https://images.unsplash.com/broken"
                                 alt={`image name: ${item.name}`}
                                 style={{objectFit: 'cover'}}
-                                width={isMobile ? '100%' :200}
+                                width={isMobile ? '100%' : 200}
                             />
                         }
                         <VStack spacing={2}>
@@ -80,5 +84,3 @@ export default function activities({activityList}: ActivityState){
         </VStack>
     )
 }
-
-
