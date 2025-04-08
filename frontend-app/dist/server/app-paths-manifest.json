@@ -1,1 +1,7 @@
-{}
+{
+  "/page": "app/page.js",
+  "/favorite/page": "app/favorite/page.js",
+  "/chat/page": "app/chat/page.js",
+  "/activities/activity/[activity]/page": "app/activities/activity/[activity]/page.js",
+  "/user/profile/page": "app/user/profile/page.js"
+}

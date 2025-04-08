@@ -1,9 +1,8 @@
-import type {Metadata} from "next";
-import './globals.css'
-import {Geist, Geist_Mono} from "next/font/google";
-import Provider from "@/app/provider";
-import React from "react";
-
+import type {Metadata} from "next"
+import {Geist, Geist_Mono} from "next/font/google"
+import '@/app/globals.css'
+import Provider from "@/app/provider"
+import React from "react"
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -27,7 +26,7 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="ru" suppressHydrationWarning>
-            <body>
+            <body suppressHydrationWarning>
                 <Provider props={children}/>
             </body>
         </html>

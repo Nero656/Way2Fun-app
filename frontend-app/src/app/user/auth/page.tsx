@@ -1,27 +1,24 @@
 'use client'
 import {Form, Panel, useToaster, Button, VStack, Schema, Notification} from 'rsuite';
-import React, {useEffect, useState} from "react";
-import {Controller, useForm} from "react-hook-form";
-import {store} from "@/redux/store";
+import {useEffect, useState} from "react"
+import {Controller, useForm} from "react-hook-form"
 import { logIn } from '@/redux/features/auth-slice'
-import {useRouter} from "next/navigation";
+import {base_url, handleResizeMin} from '@/app/config'
+import {store} from '@/redux/store'
 
-type responseType = {
-    access_token?: string,
-    error?: string
-}
+const {StringType} = Schema.Types
 
 export default function Auth() {
-    const [isMobile, setIsMobile] = useState(false)
+    const [isMobile, setIsMobile] = useState<boolean>(handleResizeMin(800))
     const {control, handleSubmit} = useForm({defaultValues: {email: '', password: ''}})
     const toaster = useToaster()
-    const router = useRouter()
 
     useEffect(() => {
-        setIsMobile(window.innerWidth <= 768);
+        const updateResolution = () =>  setIsMobile(handleResizeMin(800))
+        window.addEventListener("resize", updateResolution)
+        return () => window.removeEventListener("resize", updateResolution)
     }, [])
 
-    const {StringType, NumberType} = Schema.Types;
     const model = Schema.Model({
         email: StringType().isEmail('Email должен быть действительным')
             .isRequired('Email обязательно должен быть заполнен'),
@@ -32,11 +29,11 @@ export default function Auth() {
         <Notification type="error" header="Ошибка авторизации" closable>
             <strong>{error}</strong>
         </Notification>
-    );
+    )
 
     const requestLogin = async (data: any) => {
         try {
-            const res = await fetch(`${store.getState().api?.value.url}users/auth/login`, {
+            const res = await fetch(`${base_url}users/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -51,7 +48,6 @@ export default function Auth() {
 
             if (contentType && contentType.includes("application/json")) {
                 const data = await res.json()
-                // setResponse(data)
                 if (res.status !== 200) {
                     toaster.push(message(data?.error), {placement: 'topStart', duration: 5000})
                 }
@@ -65,11 +61,9 @@ export default function Auth() {
             console.error(e)
         }
     }
-
     const requestGetCurrentUser = async (auth_token: string) => {
-        console.log(auth_token)
         try {
-            const res = await fetch(`${store.getState().api?.value.url}users/auth/current_user`, {
+            const res = await fetch(`${base_url}users/auth/current_user`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -86,8 +80,6 @@ export default function Auth() {
                 }
                 if (res.status === 200) {
                     store.dispatch(logIn({accessToken: auth_token, user: data}))
-                    // router.refresh()
-                    // router.push(`/`)
                     location.replace('/')
                 }
             } else {
@@ -114,7 +106,6 @@ export default function Auth() {
                                 value={field.value}
                                 onChange={value => field.onChange(value)}
                                 type={type}
-
                             />
                         </Form.Group>
                     </Form.Group>
@@ -133,7 +124,7 @@ export default function Auth() {
                 padding: 10
             } : {
                 display: 'flex',
-                marginTop: 25,
+                marginTop: '5rem',
                 justifyContent: 'center',
             }}>
 
@@ -164,7 +155,6 @@ export default function Auth() {
                             <Button appearance="primary" block type={'submit'}>
                                 Войти
                             </Button>
-                            {/*<a href="#">Забыли пароль?</a>*/}
                         </VStack>
                     </Form>
                 </Panel>

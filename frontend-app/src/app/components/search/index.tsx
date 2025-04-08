@@ -2,7 +2,8 @@ import {DatePicker, Form, Input, InputGroup} from "rsuite";
 import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import React from "react";
 import {useForm, Controller} from "react-hook-form";
-import {store} from "@/redux/store";
+import {store} from "@/redux/store"
+import {base_url} from "@/app/config"
 import {setSearchResults} from "@/redux/features/search-slice"
 import {useRouter} from "next/navigation"
 import {setParams} from "@/redux/features/searchRequest_slice";
@@ -14,7 +15,7 @@ export default function Search() {
 
     const defaultValues = {
         city_name: '',
-        date: new Date(),
+        date: '',
     }
 
     const {handleSubmit, control} = useForm({defaultValues})
@@ -22,7 +23,7 @@ export default function Search() {
     const searchRequest = async (data: any) => {
         try {
             store.dispatch(setParams(data))
-            const res = await fetch(`${store.getState().api?.value.url}activities/search`, {
+            const res = await fetch(`${base_url}activities/search`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -39,7 +40,7 @@ export default function Search() {
 
                 store.dispatch(setSearchResults(data?.activity))
 
-                router.push('/activities/activitiesSearch')
+                router.push('/activities/activities_search')
             } else {
                 throw new Error("Received non-JSON response")
             }

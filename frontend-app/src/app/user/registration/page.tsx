@@ -3,10 +3,10 @@ import {useForm, Controller} from 'react-hook-form'
 import {Form, Panel, ButtonToolbar, Button, VStack, Schema, Notification, useToaster,} from 'rsuite'
 import React, {useEffect, useState} from "react"
 import Link from "next/link"
-import {store} from "@/redux/store";
+import {base_url, handleResizeMin} from '@/app/config'
 
 export default function Registration() {
-    const [isMobile, setIsMobile] = useState(false)
+    const [isMobile, setIsMobile] = useState(handleResizeMin(800))
     const toaster = useToaster()
 
     const defaultValues = {
@@ -19,7 +19,7 @@ export default function Registration() {
 
     const {control, handleSubmit} = useForm({defaultValues})
 
-    const {StringType, NumberType} = Schema.Types;
+    const {StringType} = Schema.Types;
     const model = Schema.Model({
         username: StringType().isRequired(''),
         telephone: StringType().isRequired(''),
@@ -31,7 +31,7 @@ export default function Registration() {
 
     const requestRegistration = async (data: any) => {
         try {
-            const res = await fetch(`${store.getState().api?.value.url}users/auth/register`, {
+            const res = await fetch(`${base_url}users/auth/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -49,7 +49,7 @@ export default function Registration() {
 
 
             if (contentType && contentType.includes("application/json")) {
-                const data = await res.json()
+
 
                 location.replace('/user/auth')
             } else {
@@ -76,7 +76,10 @@ export default function Registration() {
     })
 
     useEffect(() => {
-        setIsMobile(window.innerWidth <= 768);
+        const updateResolution = () =>  setIsMobile(handleResizeMin(800))
+
+        window.addEventListener("resize", updateResolution)
+        return () => window.removeEventListener("resize", updateResolution)
     }, [])
 
     const InputController = ({fieldName, title, type} : any) => {
@@ -107,7 +110,7 @@ export default function Registration() {
             padding: 10
         } : {
             display: 'flex',
-            marginTop: 25,
+            marginTop: '5rem',
             justifyContent: 'center',
         }}>
             <Panel

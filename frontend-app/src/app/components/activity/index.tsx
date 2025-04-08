@@ -1,46 +1,39 @@
-import {Card, Divider, HStack, Placeholder, Tag, TagGroup, Text, VStack} from "rsuite";
-import {useState, useEffect} from "react";
-import {useRouter} from "next/navigation";
-
-type activityItem = {
-    id: number,
-    name: string,
-    description: string,
-    short_description: string,
-    price: string,
-    duration: number,
-    capacity: number,
-    city: {
-        name: string,
-        country: string,
-        climate: string,
-    },
-    activity_date: {
-        id: number,
-        activity_id: number,
-        event_date: string,
-    }[],
-    guide: {
-        name: string,
-        telephone: string,
-    }
-    images: {
-        img_url: string,
-    }
-}
+import {Card, Divider, HStack, Image, Placeholder, Tag, TagGroup, Text, VStack} from "rsuite"
+import {useRouter} from "next/navigation"
+import {image_url, mouseEvent} from "@/app/config"
+import {format} from "date-fns"
+import {ru} from "date-fns/locale"
+import {activityItem} from "@/app/components/activity/types"
+import React from "react";
+import {css} from "@emotion/css";
 
 interface ActivityItem {
     item: activityItem
+    selected: string | number | null
 }
 
-export default function index({item}: ActivityItem) {
-    const router = useRouter()
+const image = css`
+    width: 500px;
+    height: 200px;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+`
 
+export default function index({item, selected}: ActivityItem) {
+    const router = useRouter()
     return <Card
-        shaded={'hover'}
-        onClick={() => router.push(`/activities/activity/${item?.id}`)}
+        className={'activity_items'}
+        onMouseDown={(event) => {mouseEvent(event, router, `/activities/activity/${item?.id}`)}}
     >
-        <Placeholder.Graph/>
+        {!item.images[0]?.img_url ? (
+            <Placeholder.Graph active style={{width:500, height: 200}}/>
+        ) : (
+            <Image
+                src={`${image_url}${item.images[0].img_url}`}
+                alt="category_image"
+                className={image}
+            />
+        )}
         <VStack spacing={2}>
             <Card.Header>
                 <HStack>
@@ -66,7 +59,7 @@ export default function index({item}: ActivityItem) {
                                     size="sm"
                                     key={index}
                                 >
-                                    {event.event_date}
+                                    {format(new Date(event.event_date), "d MMMM", { locale: ru })}
                                 </Tag>
                             ))}
                         </TagGroup>
@@ -82,6 +75,20 @@ export default function index({item}: ActivityItem) {
                         </TagGroup>
                     </>
                 }
+                {selected ?
+                    <>
+                        <Divider>Выбранная дата</Divider>
+                        <TagGroup style={{display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center'}}>
+                            <Tag
+                                color={'blue'}
+                                size="md"
+                            >
+                                {format(new Date(selected), "d MMMM", { locale: ru })}
+                            </Tag>
+                        </TagGroup>
+                     </> : <></>
+                }
+
                 <Divider>Описание</Divider>
                 <Text>{item?.short_description}</Text>
             </Card.Body>

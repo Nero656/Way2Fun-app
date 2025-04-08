@@ -2,19 +2,17 @@ import {configureStore, combineReducers} from "@reduxjs/toolkit"
 import {useDispatch, TypedUseSelectorHook, useSelector} from "react-redux"
 import storage from 'redux-persist/lib/storage'
 import {persistStore, persistReducer} from 'redux-persist'
-
 import {auth} from '@/redux/features/auth-slice'
 import {theme} from '@/redux/features/theme-slice'
-import {api} from '@/redux/features/api-slice'
+import {cart} from '@/redux/features/user-cart'
+import {favorite} from '@/redux/features/user-favorite'
 import search from '@/redux/features/search-slice'
 import searchRequest from '@/redux/features/searchRequest_slice'
-
 
 const persistConfig = {
     key: 'root',
     storage,
 }
-
 
 const userPersistConfig = {
     key: 'user',
@@ -26,12 +24,23 @@ const themePersistConfig = {
     storage,
 }
 
+const cartPersistConfig = {
+    key: 'cart',
+    storage,
+}
+
+const favoritePersistConfig = {
+    key: 'favorite',
+    storage,
+}
+
 const rootReducer = combineReducers({
-    api: api.reducer,
     search: search,
     searchRequest: searchRequest,
     user: persistReducer(userPersistConfig, auth.reducer),
-    theme: persistReducer(themePersistConfig, theme.reducer)
+    theme: persistReducer(themePersistConfig, theme.reducer),
+    cart: persistReducer(cartPersistConfig, cart.reducer),
+    favorite: persistReducer(favoritePersistConfig, favorite.reducer)
 });
 
 

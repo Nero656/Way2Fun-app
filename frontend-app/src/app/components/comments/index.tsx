@@ -1,15 +1,23 @@
 'use client'
-import {Avatar, AvatarGroup, Button, Card, CardGroup, Form, HStack, Panel, Text, VStack, Rate} from "rsuite"
-import React, {useEffect, useState} from "react"
+import {
+    Avatar,
+    AvatarGroup,
+    Button,
+    Card,
+    CardGroup,
+    Form,
+    HStack,
+    Panel,
+    Text,
+    VStack,
+    Rate,
+    Pagination
+} from "rsuite"
+import StarIcon from '@rsuite/icons/Star'
 import {Controller, useForm} from "react-hook-form"
-import {store} from "@/redux/store"
-
-type Color = 'violet' | 'blue' | 'green' | 'red' | 'orange' | 'yellow'
-
-const getRandomColor = (): Color => {
-    const colors: Color[] = ['violet', 'blue', 'green', 'red', 'orange', 'yellow']
-    return colors[Math.floor(Math.random() * colors.length)]
-};
+import {useState, useEffect} from "react"
+import {store} from '@/redux/store'
+import {authorizationFetch, base_url} from '@/app/config'
 
 const formatDate = (dateString: string | number | Date) => {
     const date = new Date(dateString);
@@ -23,43 +31,58 @@ const formatDate = (dateString: string | number | Date) => {
     }).replace(',', '')
 }
 
-type activityType = {
-    activity: {
-        review: [
-            {
-                rating: number,
-                user_id: number,
-                activity_id: number,
-                comment: string,
-                created_at: string,
-                user: {
-                    name: string,
-                    email: string,
-                    telephone: string,
-                }
-            }
-        ]
-    }
-    average_rating: number,
-    count_review: number,
-    count_activities_booking: number,
+
+interface Review {
+    id: number;
+    rating: number;
+    comment: string;
+    created_at: string;
+    user: {
+        id: number;
+        name: string;
+        email: string;
+    };
 }
 
-interface activityInterface {
-    id: any,
-    activity : activityType
+interface ReviewsData {
+    data: Review[];
+    total: number;
+    per_page: number;
+    current_page: number;
+    last_page: number;
 }
 
-export default function Comments({id, activity}: activityInterface){
-    const [isMobile, setIsMobile] = useState(false)
-    const {control, handleSubmit} = useForm({defaultValues: {comment: ''}})
+interface CommentsProps {
+    id: number;
+    reviews: ReviewsData;
+    refreshReviews: (page?: number) => void;
+}
 
-    const onSubmit = handleSubmit((data) => {
-        postComment(data)
+
+export default function Comments({id, reviews, refreshReviews}: CommentsProps) {
+    const {control, handleSubmit, reset, formState: {isSubmitting}} = useForm({
+        defaultValues: {
+            comment: '',
+            rating: 0
+        }
+    });
+    const [activePage, setActivePage] = useState(1);
+
+
+    const onSubmit = handleSubmit(async (data) => {
+        try {
+            await postComment(data)
+            reset()
+            refreshReviews(activePage)
+        } catch (error) {
+            console.error('Error submitting comment:', error)
+        }
     })
 
-
-
+    const handlePageChange = (page: number) => {
+        refreshReviews(page)
+        setActivePage(page)
+    }
 
     const InputController = (
         {fieldName, title, type}: any) => {
@@ -84,7 +107,6 @@ export default function Comments({id, activity}: activityInterface){
         )
     }
 
-
     const RatingController = (
         {fieldName, title, type}: any) => {
         return (
@@ -92,28 +114,27 @@ export default function Comments({id, activity}: activityInterface){
                 name={fieldName}
                 control={control}
                 render={({field}) => (
-                        <Form.Group controlId={fieldName}>
-                            <Form.ControlLabel>{title}</Form.ControlLabel>
-                            <Rate
-                                max={10}
-                                defaultValue={0}
-                                color="blue"
-                                value={field.value}
-                                name={field.name}
-                                onChange={value => field.onChange(value)}
-                            />
-                        </Form.Group>
+                    <Form.Group controlId={fieldName}>
+                        <Form.ControlLabel>{title}</Form.ControlLabel>
+                        <Rate
+                            max={10}
+                            defaultValue={0}
+                            color="blue"
+                            size={'sm'}
+                            value={field.value}
+                            name={field.name}
+                            onChange={value => field.onChange(value)}
+                        />
+                    </Form.Group>
                 )}
             />
         )
     }
 
     const postComment = async (data: any) => {
-        fetch(`${store.getState().api?.value.url}reviews`, {
+        fetch(`${base_url}reviews`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: authorizationFetch(store.getState().user?.value.accessToken),
             body: JSON.stringify({
                 'rating': data.rating,
                 'user_id': store.getState().user?.value.user.id,
@@ -121,17 +142,15 @@ export default function Comments({id, activity}: activityInterface){
                 'comment': data.comment,
             }),
         })
+
+        setActivePage(1)
+        refreshReviews(1)
     }
-
-    useEffect(() => {
-        setIsMobile(window.innerWidth <= 768)
-    }, []);
-
 
     return <>
         <Panel
             header={'Комментарии'}
-            shaded
+
             style={{marginTop: 10}}
         >
             <>
@@ -141,31 +160,57 @@ export default function Comments({id, activity}: activityInterface){
                 }
                       fluid>
                     <InputController fieldName={'comment'} title={'Комментарий'} type={'textarea'}/>
-                    <RatingController fieldName = {'rating'} title={'Оценка'} type={'rating'}/>
+                    <RatingController fieldName={'rating'} title={'Оценка'} type={'rating'}/>
                     <VStack spacing={12}>
                         <Button appearance="primary" type={'submit'}>
                             Оставить комментарий
                         </Button>
                     </VStack>
                 </Form>
-                <hr/>
-                <CardGroup columns={isMobile ? 1 : 2} spacing={20}>
-                    {activity.activity.review.map((item, index) => (
-                        <Card key={index}>
+
+                <div>
+                    <Pagination
+                        prev
+                        next
+                        first
+                        last
+                        size="sm"
+                        maxButtons={5}
+                        total={reviews.total}
+                        limit={reviews.per_page}
+                        activePage={activePage}
+                        onChangePage={handlePageChange}
+                        style={{margin: 20, justifyContent: 'center'}}
+                    />
+                </div>
+
+                <CardGroup columns={1} spacing={20}>
+                    {reviews?.data?.map((item) => (
+                        <Card key={item.id}>
                             <Card.Header>
-                                <HStack>
-                                    <AvatarGroup spacing={6}>
-                                        <Avatar color={getRandomColor()} circle alt={item.user.name.charAt(0)}></Avatar>
+                                <HStack spacing={10} alignItems="center">
+                                    <AvatarGroup>
+                                        <Avatar circle alt={item.user.name.charAt(0)}>
+                                            {item.user.name.charAt(0)}
+                                        </Avatar>
                                     </AvatarGroup>
-                                    <VStack spacing={2}>
-                                        {<Text>{item.user.name}</Text>}
+                                    <VStack spacing={2} alignItems="flex-start">
+                                        <Text>{item.user.name}</Text>
                                         <Text muted size="sm">
                                             {item.user.email}
                                         </Text>
                                     </VStack>
+                                    <span style={{right: 15, position: 'absolute'}}>
+                                        <p>
+                                        <StarIcon color={'#1499EF'} style={{ fontSize: '1em' }}/>
+                                            {` ${item.rating}/10`}
+                                        </p>
+                                    </span>
                                 </HStack>
                             </Card.Header>
-                            <Card.Body>{item.comment}</Card.Body>
+                            <Card.Body>
+                                <Text>{item.comment}</Text>
+                            </Card.Body>
                             <Card.Footer>
                                 <Text muted>{formatDate(item.created_at)}</Text>
                             </Card.Footer>

@@ -3,9 +3,10 @@ import {Nav, Image, IconButton, Drawer, Placeholder, Loader, Text} from 'rsuite'
 import React, {useState, useEffect} from 'react'
 import CategoryActivity from './activity'
 import MenuIcon from '@rsuite/icons/Menu'
-import {store} from "@/redux/store"
 import Link from "next/link";
 import {css} from '@emotion/css'
+import {base_url, handleResizeMin, image_url} from '@/app/config'
+import {activityItem} from "@/app/components/activity/types"
 
 type ImageType = {
     id: number
@@ -19,27 +20,6 @@ type categoryType = {
     images: ImageType[]
 }
 
-type activityList = {
-    id: number,
-    name: string,
-    description: string,
-    short_description: string,
-    price: string,
-    duration: number,
-    capacity: number,
-    city: {
-        name: string,
-        country: string,
-        climate: string,
-    }
-    guide: {
-        name: string,
-        telephone: string,
-    }
-    images: {
-        img_url: string,
-    }
-}
 
 const image = css`
     width: 100vw;
@@ -50,25 +30,25 @@ const image = css`
 
 const activity_footer = css`
     display: flex;
-    width: 100%;
+    width: 100vw;
     overflow: auto;
     justify-content: center;
-    align-items: 'center'
+    text-align: center;
 `
 
 export default function category() {
     const [categoryId, setCategoryId] = useState<number>(0)
     const [categoryResponse, setCategoryResponse] = useState<categoryType[]>([])
-    const [activityResponse, setActivityResponse] = useState<activityList[]>([])
+    const [activityResponse, setActivityResponse] = useState<activityItem[]>([])
     const [imageResponse, setImageResponse] = useState<ImageType | null>(null)
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 1100)
+    const [isMobile, setIsMobile] = useState(handleResizeMin(1100))
     const [active, setActive] = useState(1)
     const [drawerOpen, setDrawerOpen] = useState(false)
     const toggleDrawer = () => setDrawerOpen(!drawerOpen)
 
     const requestCategory = async () => {
         try {
-            const res = await fetch(`${store.getState().api?.value.url}categories/`, {
+            const res = await fetch(`${base_url}categories/`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -94,10 +74,9 @@ export default function category() {
             console.error(e)
         }
     }
-
     const requestImage = async (id: number) => {
         try {
-            const res = await fetch(`${store.getState().api?.value.url}image/${id}`, {
+            const res = await fetch(`${base_url}image/${id}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -123,10 +102,9 @@ export default function category() {
             console.error(e)
         }
     }
-
     const requestActivity = async (id: number) => {
         try {
-            const res = await fetch(`${store.getState().api?.value.url}activities/${id}`, {
+            const res = await fetch(`${base_url}activities/category/${id}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -150,9 +128,6 @@ export default function category() {
         }
     }
 
-    const handleResize = () => {
-        setIsMobile(window.innerWidth <= 1100)
-    }
     useEffect(() => {
         async function fetchData() {
             try {
@@ -165,8 +140,11 @@ export default function category() {
             }
         }
         fetchData()
-        window.addEventListener("resize", handleResize)
-        return () => window.removeEventListener("resize", handleResize)
+
+        const updateResolution = () =>  setIsMobile(handleResizeMin(800))
+
+        window.addEventListener("resize", updateResolution)
+        return () => window.removeEventListener("resize", updateResolution)
     }, [])
 
     const Navbar = ({active, onSelect}: any) => {
@@ -200,13 +178,11 @@ export default function category() {
                         ))}
                     </div>
 
-                    <div className="nav-items-mobile">
+                    <div className="nav-items-mobile" onClick={toggleDrawer}>
                         <IconButton
                             icon={<MenuIcon/>}
-                            onClick={toggleDrawer}
                             className="nav-items-mobile"
                             appearance="subtle"
-                            circle
                         />
                         <span>Категории</span>
                     </div>
@@ -243,7 +219,7 @@ export default function category() {
         <>
             {imageResponse?.img_url != null &&
                 <Image
-                    src={`${store.getState().api?.value.image_url}${imageResponse?.img_url}`}
+                    src={`${image_url}${imageResponse?.img_url}`}
                     alt={'category_image'}
                     className={image}
                 />

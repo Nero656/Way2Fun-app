@@ -6,78 +6,15 @@ import {
     Pagination
 } from 'rsuite'
 import ActivityItem from '@/app/components/activity'
-import {store} from "@/redux/store"
+import {authorizationFetch, base_url, handleResize, image_url} from "@/app/config"
 import {usePathname} from 'next/navigation'
-
-type activityList = {
-    current_page: number,
-    data: {
-        id: number,
-        name: string,
-        description: string,
-        short_description: string,
-        price: string,
-        duration: number,
-        capacity: number,
-        city: {
-            name: string,
-            country: string,
-            climate: string,
-        },
-        activity_date: {
-            id: number,
-            activity_id: number,
-            event_date: string,
-        }[],
-        guide: {
-            name: string,
-            telephone: string,
-        }
-        images: {
-            img_url: string,
-        }
-    }[],
-    first_page_url: string,
-    last_page_url: string,
-    last_page: number,
-    from: number,
-    links: [
-        {
-            url: string,
-            label: string,
-            active: boolean,
-        }
-    ],
-    next_page_url: number,
-    path: string,
-    per_page: number,
-    to: number,
-    total: number
-}
-
-enum resolution {
-    desktop = 4,
-    tablet = 2,
-    mobile = 1,
-    fourK = 8
-}
+import {activityList} from "@/app/components/activity/types"
+import {store} from "@/redux/store";
 
 export default function Activities() {
     const path = usePathname()
     const [activePage, setActivePage] = useState(1)
-    const [isResolution, setResolution] = useState<number>()
-
-    const handleResize = () => {
-        const width = window.innerWidth;
-        const newResolution =
-            width <= 720 ? resolution.mobile :
-                width <= 1100 ? resolution.tablet :
-                    width <= 2000 ? resolution.desktop :
-                        resolution.fourK
-
-        setResolution(newResolution)
-    }
-
+    const [isResolution, setResolution] = useState<number>(handleResize())
     const [activityResponse, setActivityResponse] = useState<activityList>({
         current_page: 1,
         data: [],
@@ -96,17 +33,14 @@ export default function Activities() {
         path: "",
         per_page: 10,
         to: 0,
-        total: 0
+        total: 0,
     })
-
 
     const requestActivity = async (id: string[], page: number) => {
         try {
-            const res = await fetch(`${store.getState().api?.value.url}activities/${id}?page=${page}`, {
+            const res = await fetch(`${base_url}activities/category/${id}?page=${page}`, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
+                headers: authorizationFetch(store.getState().user?.value.accessToken)
             })
             if (!res.ok) {
                 throw new Error(`HTTP error! Status: ${res.status}`)
@@ -125,9 +59,10 @@ export default function Activities() {
     }
 
     useEffect(() => {
-        handleResize()
-        window.addEventListener("resize", handleResize)
-        return () => window.removeEventListener("resize", handleResize)
+        const updateResolution = () => setResolution(handleResize())
+
+        window.addEventListener("resize", updateResolution)
+        return () => window.removeEventListener("resize", updateResolution)
     }, [])
 
     useEffect(() => {
@@ -148,7 +83,7 @@ export default function Activities() {
         <Panel header="Активности">
             <CardGroup columns={isResolution} spacing={20}>
                 {activityResponse.data.map((item, index) => (
-                    <ActivityItem key={index} item={item}/>
+                    <ActivityItem key={index} item={item} selected={null}/>
                 ))}
             </CardGroup>
         </Panel>

@@ -2,32 +2,26 @@
 import {CardGroup, Card, VStack, TagGroup, Placeholder, Tag, Image} from 'rsuite'
 import React, {useEffect, useState} from "react"
 import {useRouter} from 'next/navigation'
-
-type activityType = {
-    id: number,
-    name: string,
-    description: string,
-    short_description: string,
-    price: string,
-    duration: number,
-    capacity: number,
-    city: {
-        name: string,
-        country: string,
-        climate: string,
-    }
-    guide: {
-        name: string,
-        telephone: string,
-    }
-    images: {
-        img_url: string,
-    }
-}
+import {base_url, image_url, mouseEvent} from "@/app/config"
+import {activityItem} from "@/app/components/activity/types"
+import {css} from "@emotion/css"
 
 interface activityInterface {
-    activity: activityType[]
+    activity: activityItem[]
 }
+
+const image = css`
+    width: 200px;
+    height: 200px;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+`
+
+const imageMobile = css`
+    width: 500px;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+`
 
 export default function Activities({activity}: activityInterface) {
     const [isMobile, setIsMobile] = useState(false)
@@ -46,25 +40,25 @@ export default function Activities({activity}: activityInterface) {
     return (
         <VStack spacing={20} style={{marginTop: 10, display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
             <CardGroup columns={isMobile ? 1 : 2} spacing={10} style={{padding: 10}}>
-                {activity.slice(0, 4).map((item: activityType, index: number) => (
+                {activity.slice(0, 4).map((item: activityItem, index: number) => (
                     <Card
-                        shaded={'hover'}
+                        className={'activity_items'}
                         direction={isMobile ? 'column' : "row"}
                         key={index}
-                        onClick={() => router.push(`/activities/activity/${item?.id}`)}
+                        onMouseDown={(event) => {
+                            mouseEvent(event, router, `/activities/activity/${item?.id}`)
+                        }}
                     >
-                        {item.images?.img_url === null || item.images?.img_url === undefined &&
-                            <Placeholder.Graph style={isMobile ? {} : {width: 200}}/>
-                        }
-
-                        {item.images?.img_url != null || item.images?.img_url != undefined &&
+                        {!item.images[0]?.img_url ? (
+                            <Placeholder.Graph style={isMobile ? {} : { width: 200 }}  active/>
+                        ) : (
                             <Image
-                                src="https://images.unsplash.com/broken"
-                                alt={`image name: ${item.name}`}
-                                style={{objectFit: 'cover'}}
-                                width={isMobile ? '100%' : 200}
+                                src={`${image_url}${item.images[0].img_url}`}
+                                alt="category_image"
+                                className={isMobile ? imageMobile :  image}
                             />
-                        }
+                        )}
+
                         <VStack spacing={2}>
                             <Card.Header as="h5">{item.name}</Card.Header>
                             <Card.Body>

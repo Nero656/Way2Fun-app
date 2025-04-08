@@ -1,67 +1,228 @@
 'use client'
-import {Panel, Card, CardGroup, Text, Avatar, HStack, VStack, SelectPicker} from "rsuite"
-import React, {useState} from "react"
+import {
+    Panel,
+    Card,
+    CardGroup,
+    Text,
+    HStack,
+    VStack,
+    Placeholder,
+    Image,
+    Button,
+    Modal,
+    Divider
+} from "rsuite"
+import React, {useEffect, useState} from "react"
+import {store} from "@/redux/store";
+import {base_url, handleResize, image_url} from "@/app/config"
+import NoResult from "@/app/components/no_result"
+import {format} from "date-fns"
+import {ru} from "date-fns/locale"
+import {css} from "@emotion/css"
 
-const items = [
-    {
-        name: 'John Doe',
-        avatar: 'https://i.pravatar.cc/150?u=9',
-        job: 'Software Engineer',
-        description:
-            'A passionate developer with a love for learning new technologies. Enjoys building innovative solutions and solving problems.',
-        joined: 'Joined in January 2023'
+const image = css`
+    width: 100%;
+    height: 200px;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    border-radius: 6px;
+`
+
+type BookingState = {
+    date: string,
+    time: string,
+    status: boolean,
+    formatted_date: string,
+    user: {
+        name: string,
+        email: string,
+        telephone: string
     },
-    {
-        name: 'Jane Smith',
-        avatar: 'https://i.pravatar.cc/150?u=8',
-        job: 'UI/UX Designer',
-        description:
-            'A creative designer with a keen eye for aesthetics. Focuses on user experience and intuitive interfaces.',
-        joined: 'Joined in March 2022'
-    },
-    {
-        name: 'Michael Johnson',
-        avatar: 'https://i.pravatar.cc/150?u=7',
-        job: 'Data Scientist',
-        description:
-            'A data scientist who enjoys analyzing complex datasets and uncovering insights to drive business decisions.',
-        joined: 'Joined in June 2021'
-    },
-    {
-        name: 'Emily Davis',
-        avatar: 'https://i.pravatar.cc/150?u=6',
-        job: 'Project Manager',
-        description:
-            'A project manager with a passion for leading teams to success. Specializes in Agile methodologies and team coordination.',
-        joined: 'Joined in August 2020'
+    activity: {
+        name: string,
+        description: string,
+        short_description: string,
+        price: number,
+        capacity: number,
+        duration: number,
+        images: {
+            img_url: string,
+        }[]
     }
-]
+    created_at: string,
+}
+
+interface Booking {
+    booking: BookingState
+}
 
 export default function booking() {
-    const [columns, setColumns] = useState(2)
-    const [spacing, setSpacing] = useState(20)
+    const [bookingList, setBookingList] = useState<BookingState[]>([])
+    const [isResolution, setResolution] = useState<number>(handleResize())
+    const [selectedBooking, setSelectedBooking] = useState<BookingState | null>(null)
+    const [open, setOpen] = React.useState(false)
+    const handleOpen = () => setOpen(true)
+    const handleClose = () => setOpen(false)
 
-    return (<Panel header="Список запланированных поездок" shaded>
-        <CardGroup columns={columns} spacing={spacing}>
-            {items.map((item, index) => (
-                <Card key={index}>
-                    <Card.Header>
-                        <HStack>
-                            <Avatar circle src={item.avatar} />
-                            <VStack spacing={2}>
-                                <Text>{item.name}</Text>
-                                <Text muted size="sm">
-                                    {item.job}
-                                </Text>
-                            </VStack>
-                        </HStack>
-                    </Card.Header>
-                    <Card.Body>{item.description}</Card.Body>
-                    <Card.Footer>
-                        <Text muted>{item.joined}</Text>
-                    </Card.Footer>
-                </Card>
-            ))}
-        </CardGroup>
+    const requestBooking = async () => {
+        try {
+            const res =
+                await fetch(`${base_url}bookings/booking/${store.getState().user?.value.user.id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+            if (!res.ok) {
+                throw new Error(`HTTP error! Status: ${res.status}`)
+            }
+
+            const contentType = res.headers.get("content-type")
+
+            if (contentType && contentType.includes("application/json")) {
+                const data = await res.json()
+                setBookingList(data)
+            } else {
+                throw new Error("Received non-JSON response")
+            }
+
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    useEffect(() => {
+        requestBooking()
+    }, [])
+
+    useEffect(() => {
+        const updateResolution = () => setResolution(handleResize())
+        window.addEventListener("resize", updateResolution)
+        return () => window.removeEventListener("resize", updateResolution)
+    }, [])
+
+
+    return (<Panel header="Список запланированных поездок">
+        {bookingList.length > 0 ?
+            <CardGroup columns={isResolution}>
+                {bookingList.map((item, index) => (
+                    <Card key={index}  shaded="hover" onClick={() => {
+                        setSelectedBooking(item)
+                        handleOpen()
+                    }}>
+                        {!item.activity.images[0]?.img_url ? (
+                            <Placeholder.Graph active style={{width:500, height: 200}}/>
+                        ) : (
+                            <Image
+                                src={`${image_url}${item.activity.images[0].img_url}`}
+                                alt="category_image"
+                                className={image}
+                            />
+                        )}
+                        <Card.Header>
+                            <HStack>
+                                <VStack spacing={2}>
+                                    <Text>{item?.activity.name}</Text>
+                                    <Text muted size="sm">
+                                        {item?.status ? 'Мероприятие планируется' : 'Мероприятие окончено'}
+                                    </Text>
+                                </VStack>
+                            </HStack>
+                        </Card.Header>
+                        <Card.Body>
+                            <Text>
+                                <strong>Дата проведения: </strong>
+                                {format(new Date(item?.date), "d MMMM Y", {locale: ru})}
+                            </Text>
+                            <Text> <strong>Время проведения: </strong>
+                                {
+                                    `${new Date('1970-01-01T' + item.time).getHours()}ч
+                                     ${new Date('1970-01-01T' + item.time).getMinutes()}м`
+                                }
+                            </Text>
+                        </Card.Body>
+                        <Card.Footer>
+                            <Text muted>{item?.activity.short_description}</Text>
+                        </Card.Footer>
+                    </Card>
+                ))}
+            </CardGroup> :
+            <NoResult/>
+        }
+
+        <Modal overflow={false} open={open} onClose={handleClose}>
+            <Modal.Header>
+                {selectedBooking && (
+                <Modal.Title>Бронь: {selectedBooking.activity.name}</Modal.Title>
+                )}
+            </Modal.Header>
+            <Modal.Body>
+                {selectedBooking && (
+                    <VStack spacing={3}>
+
+                        {!selectedBooking.activity.images[0]?.img_url ? (
+                            <Placeholder.Graph active style={{width:'100%', height: 200}}/>
+                        ) : (
+                            <Image
+                                src={`${image_url}${selectedBooking.activity.images[0].img_url}`}
+                                alt="category_image"
+                                className={image}
+                            />
+                        )}
+                        <Divider />
+                        <Text>
+                            <strong>Мероприятие:</strong> {selectedBooking.activity.name}
+                        </Text>
+                        <Text>
+                            <strong>Забронировано: </strong>
+                            {format(new Date(selectedBooking?.created_at), "d MMMM Y", {locale: ru})}
+                        </Text>
+                        <Text>
+                            <strong>Описание:</strong> {selectedBooking.activity.description}
+                        </Text>
+                        <Text>
+                            <strong>Дата:</strong> {format(new Date(selectedBooking?.date), "d MMMM Y", {locale: ru})}
+                        </Text>
+                        <Text>
+                            <strong>Время:</strong> {selectedBooking.time}
+                        </Text>
+                        <Text>
+                            <strong>Статус:</strong> {selectedBooking.status ? 'Планируется' : 'Окончено'}
+                        </Text>
+                        <Divider />
+                        <Text>
+                            <strong>Пользователь:</strong> {selectedBooking.user.name}
+                        </Text>
+                        <Text>
+                            <strong>Email:</strong> {selectedBooking.user.email}
+                        </Text>
+                        <Text>
+                            <strong>Телефон:</strong> {selectedBooking.user.telephone}
+                        </Text>
+
+                        <Divider />
+
+                        <Text>
+                            <strong>Цена:</strong> {selectedBooking.activity.price} ₽
+                        </Text>
+                        <Text>
+                            <strong>Вместимость:</strong> {selectedBooking.activity.capacity} чел.
+                        </Text>
+                        <Text>
+                            <strong>Длительность:</strong> {selectedBooking.activity.duration} мин.
+                        </Text>
+                    </VStack>
+                )}
+            </Modal.Body>
+            <Modal.Footer>
+                <Button onClick={handleClose} appearance="primary">
+                    Принять
+                </Button>
+                <Button onClick={handleClose} appearance="subtle">
+                    Отмена
+                </Button>
+            </Modal.Footer>
+        </Modal>
+
     </Panel>)
 }
