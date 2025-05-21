@@ -1,5 +1,5 @@
-import {base_url} from "@/app/config";
-import {store} from "@/redux/store";
+import {base_url} from "@/app/config"
+import {store} from "@/redux/store"
 
 export const getRequest = async () => {
     try {
@@ -10,7 +10,7 @@ export const getRequest = async () => {
             }
         })
         if (!res.ok) {
-            throw new Error(`HTTP error! Status: ${res.status}`)
+            // throw new Error(`HTTP error! Status: ${res.status}`)
         }
         const contentType = res.headers.get("content-type")
 
@@ -21,7 +21,7 @@ export const getRequest = async () => {
                 // getProducts(data.products)
             }
         } else {
-            throw new Error("Received non-JSON response")
+            // throw new Error("Received non-JSON response")
         }
     } catch (e) {
         console.error(e)

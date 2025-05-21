@@ -6,7 +6,7 @@ import {Panel, Tabs, Placeholder} from "rsuite"
 export default function index(){
     return <Panel header={'Панель модератора'} shaded style={{minWidth:'60vw'}}>
         <Tabs defaultActiveKey="1" appearance="subtle">
-            <Tabs.Tab eventKey="1" title="Добовление активности">
+            <Tabs.Tab eventKey="1" title="Добовление мероприятия">
                 <Activity/>
             </Tabs.Tab>
             <Tabs.Tab eventKey="2" title="Добавление дат проведения мероприятия">

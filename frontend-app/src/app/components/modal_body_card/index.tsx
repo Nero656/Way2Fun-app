@@ -2,8 +2,7 @@ import {Button, Form, Modal, Schema} from "rsuite";
 import {base_url} from "@/app/config";
 import {store} from "@/redux/store";
 import {clear} from "@/redux/features/user-cart";
-import {Controller, useForm} from "react-hook-form";
-import {useState} from "react"
+import {Controller, useForm} from "react-hook-form"
 import {useRouter} from "next/navigation"
 import {css} from "@emotion/css"
 
@@ -93,12 +92,13 @@ export default function index({onOpen, onClose}: props) {
                 body: JSON.stringify({
                     'bookings': store.getState().cart?.products.map(product => {
                         const bookingDate = product.selected.toString()
-                        const [date, time] = bookingDate.split(" ") // Разделяем дату и время
+                        const [date, time] = bookingDate.split(" ")
                         return {
                             date: date,
                             time: time,
                             user_id: store.getState().user?.value.user.id,
-                            activity_id: product.activity.id
+                            activity_id: product.activity.id,
+                            activity_date_id: product.selectedId
                         };
                     }),
                 }),

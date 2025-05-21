@@ -73,7 +73,6 @@ export default function index() {
             } else {
                 throw new Error("Received non-JSON response")
             }
-
         } catch (e) {
             console.error(e)
         }

@@ -190,7 +190,7 @@ export default function Comments({id, reviews, refreshReviews}: CommentsProps) {
                             <Card.Header>
                                 <HStack spacing={10} alignItems="center">
                                     <AvatarGroup>
-                                        <Avatar circle alt={item.user.name.charAt(0)}>
+                                        <Avatar color={'blue'} circle alt={item.user.name.charAt(0)}>
                                             {item.user.name.charAt(0)}
                                         </Avatar>
                                     </AvatarGroup>

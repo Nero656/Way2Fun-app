@@ -37,7 +37,7 @@ const activity_footer = css`
 `
 
 export default function category() {
-    const [categoryId, setCategoryId] = useState<number>(0)
+    const [categoryId, setCategoryId] = useState<number>(1)
     const [categoryResponse, setCategoryResponse] = useState<categoryType[]>([])
     const [activityResponse, setActivityResponse] = useState<activityItem[]>([])
     const [imageResponse, setImageResponse] = useState<ImageType | null>(null)

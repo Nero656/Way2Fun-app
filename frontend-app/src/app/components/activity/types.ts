@@ -19,6 +19,10 @@ export interface activityType {
                 building: string,
             }
         },
+        available_seats:{
+            id: number,
+            available_seats: number,
+        }[],
         guide: {
             id: number,
             name: string,

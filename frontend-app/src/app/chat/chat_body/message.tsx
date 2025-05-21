@@ -45,7 +45,7 @@ export default function index({props}: Props) {
                 </HStack>
             </Card.Header>
             <Card.Body>
-                <span style={{paddingLeft: 50}}>{props.message}</span>
+                <div style={{paddingLeft: 50}}><p>{props.message}</p></div>
             </Card.Body>
         </Card>
     </div>

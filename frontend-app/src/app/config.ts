@@ -1,6 +1,6 @@
-export const base_url = 'http://192.168.1.90:81/api/'
+export const base_url = 'http://192.168.1.14:81/api/'
 //адрес для вывода изображений
-export const image_url = 'http://192.168.1.90:81/'
+export const image_url = 'http://192.168.1.14:81/'
 
 // Для вывода N количества столбцов, в зависимости от устройства
 export enum resolutionColumns {

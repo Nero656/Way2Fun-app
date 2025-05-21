@@ -14,11 +14,12 @@ import {
 } from "rsuite"
 import React, {useEffect, useState} from "react"
 import {store} from "@/redux/store";
-import {base_url, handleResize, image_url} from "@/app/config"
+import {authorizationFetch, base_url, handleResize, image_url} from "@/app/config"
 import NoResult from "@/app/components/no_result"
 import {format} from "date-fns"
 import {ru} from "date-fns/locale"
 import {css} from "@emotion/css"
+import {useRouter} from "next/navigation";
 
 const image = css`
     width: 100%;
@@ -45,6 +46,7 @@ type BookingState = {
         price: number,
         capacity: number,
         duration: number,
+        guide_id: number,
         images: {
             img_url: string,
         }[]
@@ -57,6 +59,7 @@ interface Booking {
 }
 
 export default function booking() {
+    const router = useRouter()
     const [bookingList, setBookingList] = useState<BookingState[]>([])
     const [isResolution, setResolution] = useState<number>(handleResize())
     const [selectedBooking, setSelectedBooking] = useState<BookingState | null>(null)
@@ -91,6 +94,27 @@ export default function booking() {
         }
     }
 
+    const makeNewChat = async (guidId: number) => {
+        try {
+            const res = await fetch(`
+            ${base_url}chat/${store.getState().user?.value.user.id}/${guidId}`, {
+                method: 'GET',
+                headers: authorizationFetch(store.getState().user?.value.accessToken),
+            })
+            const contentType = res.headers.get("content-type")
+
+            if (contentType && contentType.includes("application/json")) {
+                const data = await res.json()
+
+                router.push(`/chat?id=${data.id}`)
+            } else {
+                throw new Error("Received non-JSON response")
+            }
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
     useEffect(() => {
         requestBooking()
     }, [])
@@ -102,7 +126,7 @@ export default function booking() {
     }, [])
 
 
-    return (<Panel header="Список запланированных поездок">
+    return (<Panel header="Список запланированных мероприятий">
         {bookingList.length > 0 ?
             <CardGroup columns={isResolution}>
                 {bookingList.map((item, index) => (
@@ -159,7 +183,6 @@ export default function booking() {
             <Modal.Body>
                 {selectedBooking && (
                     <VStack spacing={3}>
-
                         {!selectedBooking.activity.images[0]?.img_url ? (
                             <Placeholder.Graph active style={{width:'100%', height: 200}}/>
                         ) : (
@@ -199,6 +222,15 @@ export default function booking() {
                         <Text>
                             <strong>Телефон:</strong> {selectedBooking.user.telephone}
                         </Text>
+                        <Divider />
+
+                        <h5>Контакты</h5>
+                        <Button
+                            onClick={() => makeNewChat(selectedBooking.activity.guide_id)}
+                            appearance={'link'}
+                        >
+                            Связаться с гидом
+                        </Button>
 
                         <Divider />
 
@@ -217,9 +249,6 @@ export default function booking() {
             <Modal.Footer>
                 <Button onClick={handleClose} appearance="primary">
                     Принять
-                </Button>
-                <Button onClick={handleClose} appearance="subtle">
-                    Отмена
                 </Button>
             </Modal.Footer>
         </Modal>

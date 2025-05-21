@@ -11,8 +11,8 @@ type PathState = {
 
 const initialState = {
     value : {
-        url: `http://192.168.1.90:81/api/`,
-        image_url: `http://192.168.1.90:81`
+        url: `http://192.168.1.5:81/api/`,
+        image_url: `http://192.168.1.5:81`
     } as PathState
 } as InitialState
 
